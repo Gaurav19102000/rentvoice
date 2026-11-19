@@ -11,6 +11,24 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname
 
 Base.metadata.create_all(bind=engine)  # swap for Alembic migrations once the schema settles
 
+
+
+def _auto_seed():
+    """Free hosting wipes SQLite on restart, so refill sample listings if the table is empty."""
+    from .database import SessionLocal
+    from .models import Property
+
+    db = SessionLocal()
+    try:
+        if db.query(Property).count() == 0:
+            from scripts.seed import main as seed
+            seed()
+    finally:
+        db.close()
+
+
+_auto_seed()
+
 app = FastAPI(title="RentVoice API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
